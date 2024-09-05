@@ -1,0 +1,136 @@
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.UnaryOperator;
+
+public class Day13Vincent {
+
+    public static void main(String[] args) {
+        List<String> a=new ArrayList<>();
+        a.add("#.##..##.");
+        a.add("..#.##.#.");
+        a.add("##......#");
+        a.add("##......#");
+        a.add("..#.##.#.");
+        a.add("..##..##.");
+        a.add("#.#.##.#.");
+        a.add(" ");
+        a.add("#...##..#");
+        a.add("#....#..#");
+        a.add("..##..###");
+        a.add("#####.##.");
+        a.add("#####.##.");
+        a.add("..##..###");
+        a.add("#....#..#");
+
+        System.out.println(part2(a));
+
+
+    }
+
+    static int part2(List<String> input) {
+        return toMirrors(input).stream()
+                .mapToInt(Mirror::getValue)
+                .sum();
+    }
+
+    private static List<Mirror> toMirrors(List<String> input) {
+        System.out.println(splitByWhiteLine(input));
+        return splitByWhiteLine(input).stream()
+                .map(list -> toMirror(list))
+                .toList();
+    }
+
+    public static Mirror toMirror(final List<String> stringList) {
+        Map<Index, Character> map = new HashMap<>();
+        for (int i = 0; i < stringList.size(); i++) {
+            String s = stringList.get(i);
+            for (int j = 0; j < s.length(); j++) {
+                map.put(new Index(i, j), s.charAt(j));
+            }
+        }
+        return new Mirror(map);
+    }
+
+    public static List<List<String>> splitByWhiteLine(List<String> input) {
+        List<List<String>> list = new ArrayList<>();
+        List<String> last = new ArrayList<>();
+        list.add(last);
+        for (String s : input) {
+            if (s.isBlank()) {
+                last = new ArrayList<>();
+                list.add(last);
+            } else {
+                last.add(s);
+            }
+        }
+        return list;
+    }
+
+    private record Mirror(Map<Index, Character> map) {
+
+        int getValue() {
+            return (getReflectionIndex(Type.ROW, 0) + 1) + (getReflectionIndex(Type.COLUMN, 0) + 1) * 100;
+        }
+
+        private int getReflectionIndex(Type type,
+                                       //Expected count == 0 for part 1 and 1 for part 2
+                                       int expectedCount) {
+            for (int i = 0; i < max(type, in->in.flip()); i++) {//no of cols/rows
+                if (countReflectionDifferences(i, type) == expectedCount) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        private int countReflectionDifferences(final int n, final Type type) {
+            int count = 0;
+            for (int i = 0; i <= max(type, l->l); i++) {//no of rows/cols
+                for (int j = 0; j <= n; j++) {
+                    Index index1 = type.toTypeSpecificIndex(new Index(i, j));
+                    Index index2 = type.toTypeSpecificIndex(new Index(i, 2 * (n + 1) - 1 - j));
+                    if (!areEachOthersReflection(index1, index2)) {
+                        count++;
+                    }
+                }
+            }
+            return count;
+        }
+
+        private boolean areEachOthersReflection(Index index1, Index index2) {
+            return !map.containsKey(index1) || !map.containsKey(index2) || map.get(index1).equals(map.get(index2));
+        }
+
+        private int max(Type type, UnaryOperator<Index> operator) {
+            return map.keySet().stream().map(operator).mapToInt(type::toSpecificIndex).max().orElseThrow();
+        }
+    }
+
+
+    private record Index(int x, int y) {
+        Index flip() {
+            return new Index(y, x);
+        }
+    }
+
+    private enum Type {
+        ROW, COLUMN;
+
+        Index toTypeSpecificIndex(Index index) {
+            return switch (this) {
+                case ROW -> index;
+                case COLUMN -> index.flip();
+            };
+        }
+
+        Integer toSpecificIndex(Index index) {
+            return switch (this) {
+                case ROW -> index.x;
+                case COLUMN -> index.y;
+            };
+        }
+    }
+}
