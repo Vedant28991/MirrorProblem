@@ -1,0 +1,139 @@
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.function.Predicate;
+
+public class Day7 {
+    public static void main(String[] args) {
+
+        /*int[] kkqtas = Hand.counts("KKQTA");
+        for(int a:kkqtas) System.out.println(a);
+
+        //System.out.println("KKBQT");
+        System.out.println(Hand.mostOccurring("KKKQT"));
+        System.out.println(Hand.counts("K"));*/
+
+        List<String> p=new ArrayList<>();
+
+        p.add("AAAAA 1");
+        //p.add("KKKKK 2");
+        /*p.add("T55J5 684");
+        p.add("KK677 28");
+        p.add("KTJJT 220");
+        p.add("QQQJA 483");*/
+
+        //System.out.println(part2(p));
+
+        /*for(int i: Hand.counts("A"))
+        System.out.println(i);*/
+
+        //System.out.println(Hand.mostOccurring("AKKAA"));
+
+        System.out.println(part2(p));
+
+        /*Integer[] counts = Arrays.stream(counts()).boxed().toArray(Integer[]::new);
+        Arrays.sort(counts, Comparator.reverseOrder());*/
+
+
+
+    }
+
+    private static long part2(List<String> input) {
+        List<String> list = input.stream()
+                .map(Hand::new).sorted()
+                .map(s1 -> s1.inputLine)
+                .toList();
+        long result = 0;
+        for (int i = 0; i < list.size(); i++) {
+            String string = list.get(i).split(" ")[1];
+
+            result += Long.parseLong(string) * (i + 1);
+        }
+        return result;
+    }
+
+    private record Hand(String inputLine) implements Comparable<Hand> {
+
+        private static final List<String> CARDS = List.of("A", "K", "Q", "T", "9", "8", "7", "6", "5", "4", "3", "2", "J");
+        private static final List<Predicate<Hand>> HAND_TYPES = List.of(
+                hand -> hand.hasCounts(5L),
+                hand -> hand.hasCounts(4L),
+                hand -> hand.hasCounts(3L, 2L),
+                hand -> hand.hasCounts(3L),
+                hand -> hand.hasCounts(2L, 2L),
+                hand -> hand.hasCounts(2L));
+
+
+        @Override
+        public int compareTo(final Hand other) {
+            for (Predicate<Hand> type : HAND_TYPES) {
+                if (type.test(this) || type.test(other)) {
+                    if (type.test(this) && type.test(other)) {
+                        return highCard(this, other);
+                    } else {
+                        return type.test(this) ? 1 : -1;
+                    }
+                }
+            }
+            return highCard(this, other);
+        }
+
+        private String toHandString() {
+            return inputLine.split(" ")[0];
+        }
+
+
+        private String toHandStringNoJokers() {
+            String handString = toHandString();
+            String mostOccurring = mostOccurring(handString);
+            return handString.replaceAll("J", mostOccurring);
+        }
+
+        private static String mostOccurring(String s) {
+            int[] counts = counts(s);
+            int mostOccurringIndex = 0;
+            for (int i = 0; i < counts.length - 1; i++) {
+                if (counts[i] > counts[mostOccurringIndex]) {
+                    mostOccurringIndex = i;
+                }
+            }
+            return CARDS.get(mostOccurringIndex);
+        }
+
+        private boolean hasCounts(final long... numbers) {
+            Integer[] counts = Arrays.stream(counts(toHandStringNoJokers())).boxed().toArray(Integer[]::new);
+            Arrays.sort(counts, Comparator.reverseOrder());
+            //count- [5,0,0,0..]
+            //num- [5] -- five hand
+
+            for (int i = 0; i < numbers.length; i++) {
+                if (counts[i] < numbers[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static int[] counts(String s) {
+            int[] counts = new int[CARDS.size()];
+            for (int i = 0; i < s.length(); i++) {
+                counts[CARDS.indexOf(s.substring(i, i + 1))]++;
+            }
+            return counts;
+        }
+
+        private static int highCard(Hand hand, Hand other) {
+            String handString = hand.toHandString();
+            String otherString = other.toHandString();
+            for (int i = 0; i < 5; i++) {
+                if (handString.charAt(i) != otherString.charAt(i)) {
+                    return CARDS.indexOf(handString.substring(i, i + 1)) < CARDS.indexOf(otherString.substring(i, i + 1)) ? 1 : -1;
+                }
+            }
+            return 0;
+        }
+    }
+
+}
+
